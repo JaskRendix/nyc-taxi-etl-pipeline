@@ -1,0 +1,8 @@
+pandas
+pyyaml
+pytest
+pyarrow
+sqlalchemy
+psycopg2-binary
+streamlit
+altair
