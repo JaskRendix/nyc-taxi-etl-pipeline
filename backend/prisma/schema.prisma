@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:postgres@localhost:5432/taxi"
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model YellowCabCleaned {
+  VendorID              BigInt?
+  tpep_pickup_datetime  DateTime? @db.Timestamp(6)
+  tpep_dropoff_datetime DateTime? @db.Timestamp(6)
+  passenger_count       Float?
+  trip_distance         Float?
+  RatecodeID            Float?
+  store_and_fwd_flag    String?
+  PULocationID          BigInt?
+  DOLocationID          BigInt?
+  payment_type          BigInt?
+  fare_amount           Float?
+  extra                 Float?
+  mta_tax               Float?
+  tip_amount            Float?
+  tolls_amount          Float?
+  improvement_surcharge Float?
+  total_amount          Float?
+  congestion_surcharge  Float?
+  airport_fee           Float?
+  trip_duration         Float?
+  hour                  Int?
+  reason                String?
+  is_short_expensive    Boolean?
+  is_long_duration      Boolean?
+  is_cheap_per_mile     Boolean?
+  id                    Int       @id @default(autoincrement())
+
+  @@map("yellowcab_cleaned")
+}

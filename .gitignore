@@ -21,6 +21,7 @@ venv/
 
 # Logs
 *.log
+logs/
 
 # --- Data files ---
 # Ignore large raw datasets
@@ -40,13 +41,14 @@ figures/
 # --- Environment / config ---
 .env
 *.env
+backend/.env
+frontend/.env
 
 # --- OS / Editor ---
 .DS_Store
 Thumbs.db
-
-# VSCode
 .vscode/
+.idea/
 
 # Pytest cache
 .pytest_cache/
@@ -58,3 +60,31 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+
+# --- Node / TypeScript / Frontend ---
+
+# Global node modules and locks
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Backend (Node + Prisma)
+backend/node_modules/
+backend/dist/
+backend/.tsbuildinfo
+backend/prisma/migrations/
+backend/node_modules/.prisma/
+backend/prisma/client/
+
+# Frontend (React + Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# TypeScript build info
+*.tsbuildinfo
