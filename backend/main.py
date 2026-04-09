@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -6,6 +7,14 @@ from backend.db import SessionLocal
 from backend.models import YellowCab
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_db():

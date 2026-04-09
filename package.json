@@ -5,6 +5,7 @@
     "@types/node": "^25.5.0",
     "express": "^5.2.1",
     "prisma": "^5.15.0",
+    "recharts": "^3.8.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

@@ -32,5 +32,4 @@ dev: ## Run Backend and Frontend together
 
 clean: ## Stop Docker and remove build artifacts
 	docker-compose down
-	rm -rf $(FRONTEND_DIR)/node_modules
 	rm -rf $(FRONTEND_DIR)/dist
