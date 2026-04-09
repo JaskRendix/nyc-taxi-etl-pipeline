@@ -407,3 +407,85 @@ def airport_traffic(db: Session = Depends(get_db)):
         }
 
     return results
+
+
+@app.get("/api/rush-hour-squeeze")
+def rush_hour_squeeze(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            YellowCab.id,
+            YellowCab.trip_distance,
+            YellowCab.trip_duration,
+            YellowCab.fare_amount,
+            YellowCab.hour,
+        )
+        .filter(YellowCab.trip_distance < 1)
+        .filter(YellowCab.trip_duration > 1200)  # > 20 minutes
+        .filter(YellowCab.fare_amount > 20)
+        .all()
+    )
+
+    return [
+        {
+            "id": r.id,
+            "distance": float(r.trip_distance),
+            "duration": float(r.trip_duration),
+            "fare": float(r.fare_amount),
+            "hour": r.hour,
+        }
+        for r in rows
+    ]
+
+
+@app.get("/api/late-night-surges")
+def late_night_surges(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            YellowCab.id,
+            YellowCab.trip_distance,
+            YellowCab.fare_amount,
+            YellowCab.payment_type,
+            YellowCab.hour,
+        )
+        .filter(YellowCab.hour.between(1, 4))
+        .filter(YellowCab.trip_distance > 5)
+        .filter(YellowCab.fare_amount > 30)
+        .filter(YellowCab.payment_type == 2)  # cash
+        .all()
+    )
+
+    return [
+        {
+            "id": r.id,
+            "distance": float(r.trip_distance),
+            "fare": float(r.fare_amount),
+            "payment_type": r.payment_type,
+            "hour": r.hour,
+        }
+        for r in rows
+    ]
+
+
+@app.get("/api/too-good-to-be-true")
+def too_good_to_be_true(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            YellowCab.id,
+            YellowCab.trip_distance,
+            YellowCab.fare_amount,
+            YellowCab.hour,
+        )
+        .filter(YellowCab.trip_distance > 10)
+        .filter(YellowCab.fare_amount < 10)
+        .all()
+    )
+
+    return [
+        {
+            "id": r.id,
+            "distance": float(r.trip_distance),
+            "fare": float(r.fare_amount),
+            "hour": r.hour,
+        }
+        for r in rows
+    ]

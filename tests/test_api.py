@@ -128,3 +128,21 @@ def test_airport_traffic():
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)
+
+
+def test_rush_hour_squeeze():
+    r = client.get("/api/rush-hour-squeeze")
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
+
+
+def test_late_night_surges():
+    r = client.get("/api/late-night-surges")
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
+
+
+def test_too_good_to_be_true():
+    r = client.get("/api/too-good-to-be-true")
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
