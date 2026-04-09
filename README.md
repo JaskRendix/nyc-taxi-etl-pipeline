@@ -1,11 +1,14 @@
-# NYC Taxi ETL Pipeline
+# **NYC Taxi ETL Pipeline**
 
 This project processes NYC Yellow Taxi trip data and exposes the cleaned results through a small full‑stack system.  
-It includes a Python ETL pipeline, a PostgreSQL database, a Node.js API, and a React dashboard.
+It includes a Python ETL pipeline, a PostgreSQL database, a FastAPI backend, and a React dashboard.
 
-The goal is to show a clear end‑to‑end flow: raw data → cleaned data → database → API → UI.
+The goal is to show a clear end‑to‑end flow:  
+**raw data → cleaned data → database → API → UI**
 
-## Project Structure
+---
+
+# **Project Structure**
 
 ```
 nyc-taxi-etl-pipeline/
@@ -14,9 +17,10 @@ nyc-taxi-etl-pipeline/
 ├── output/                 # Cleaned output files
 ├── docker-compose.yml      # PostgreSQL service
 │
-├── backend/                # Node.js + Express + Prisma API
-│   ├── prisma/schema.prisma
-│   └── src/server.ts
+├── backend/                # FastAPI backend (Python + SQLAlchemy)
+│   ├── main.py
+│   ├── models.py
+│   └── db.py
 │
 ├── frontend/               # React + Vite + Tailwind dashboard
 │   └── src/components/Dashboard.tsx
@@ -26,7 +30,7 @@ nyc-taxi-etl-pipeline/
 
 ---
 
-# Setup
+# **Setup**
 
 ## 1. Create and activate a virtual environment
 
@@ -37,11 +41,11 @@ source venv/bin/activate
 
 ## 2. Install all dependencies
 
-This installs Python packages, Node packages, and generates the Prisma client.
-
 ```bash
 make setup
 ```
+
+This installs Python packages and frontend dependencies.
 
 ## 3. Start PostgreSQL
 
@@ -53,7 +57,7 @@ This starts a PostgreSQL 15 container with a `taxi` database.
 
 ---
 
-# Run the ETL Pipeline
+# **Run the ETL Pipeline**
 
 ```bash
 make pipeline
@@ -70,10 +74,9 @@ The pipeline performs four steps:
 
 ---
 
-# Backend API
+# **Backend API (FastAPI)**
 
-The backend is a small Node.js service built with Express and Prisma.  
-It exposes cleaned data through a simple HTTP API.
+The backend is a lightweight FastAPI service using SQLAlchemy to query PostgreSQL.
 
 Start the backend:
 
@@ -93,11 +96,11 @@ Example endpoint:
 GET /api/stats
 ```
 
-This returns basic statistics from the `yellowcab_cleaned` table.
+Returns basic statistics from the `yellowcab_cleaned` table.
 
 ---
 
-# Frontend Dashboard
+# **Frontend Dashboard**
 
 The frontend is a React application styled with Tailwind.  
 It displays summary metrics and can be extended with charts and maps.
@@ -116,7 +119,7 @@ http://localhost:5173
 
 ---
 
-# Run Backend and Frontend Together
+# **Run Backend and Frontend Together**
 
 ```bash
 make dev
@@ -126,7 +129,7 @@ This starts both services in parallel.
 
 ---
 
-# Verify Data in PostgreSQL
+# **Verify Data in PostgreSQL**
 
 ```bash
 docker exec -it taxi_postgres psql -U postgres -d taxi
@@ -135,10 +138,10 @@ SELECT COUNT(*) FROM yellowcab_cleaned;
 
 ---
 
-# Clean Up
+# **Clean Up**
 
 ```bash
 make clean
 ```
 
-This stops Docker and removes build folders.
+Stops Docker and removes build artifacts.
