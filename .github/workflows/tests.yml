@@ -8,6 +8,21 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: taxi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -23,5 +38,59 @@ jobs:
           pip install -r requirements.txt
           pip install pytest httpx
 
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres; do
+            echo "Waiting for Postgres..."
+            sleep 1
+          done
+
+      - name: Create schema + seed data
+        run: |
+          psql postgresql://postgres:postgres@localhost:5432/taxi <<EOF
+          CREATE TABLE yellowcab_cleaned (
+            id SERIAL PRIMARY KEY,
+            "VendorID" INT,
+            tpep_pickup_datetime TIMESTAMP,
+            tpep_dropoff_datetime TIMESTAMP,
+            passenger_count INT,
+            trip_distance FLOAT,
+            "RatecodeID" INT,
+            store_and_fwd_flag TEXT,
+            "PULocationID" INT,
+            "DOLocationID" INT,
+            payment_type INT,
+            fare_amount FLOAT,
+            extra FLOAT,
+            mta_tax FLOAT,
+            tip_amount FLOAT,
+            tolls_amount FLOAT,
+            improvement_surcharge FLOAT,
+            total_amount FLOAT,
+            congestion_surcharge FLOAT,
+            airport_fee FLOAT,
+            trip_duration FLOAT,
+            hour INT,
+            reason TEXT,
+            is_short_expensive BOOLEAN,
+            is_long_duration BOOLEAN,
+            is_cheap_per_mile BOOLEAN
+          );
+
+          INSERT INTO yellowcab_cleaned (
+            "VendorID", tpep_pickup_datetime, tpep_dropoff_datetime,
+            passenger_count, trip_distance, "RatecodeID", store_and_fwd_flag,
+            "PULocationID", "DOLocationID", payment_type, fare_amount,
+            extra, mta_tax, tip_amount, tolls_amount, improvement_surcharge,
+            total_amount, congestion_surcharge, airport_fee, trip_duration,
+            hour, reason, is_short_expensive, is_long_duration, is_cheap_per_mile
+          ) VALUES
+            (1, NOW(), NOW(), 1, 1.2, 1, 'N', 10, 20, 1, 8.5, 0, 0.5, 2.0, 0, 0.3, 10.8, 2.5, 0, 300, 14, NULL, false, false, false),
+            (2, NOW(), NOW(), 2, 3.4, 1, 'N', 11, 21, 2, 12.0, 0, 0.5, 3.0, 0, 0.3, 15.8, 2.5, 0, 600, 9, NULL, false, false, false),
+            (1, NOW(), NOW(), 1, 0.8, 1, 'N', 12, 22, 1, 5.0, 0, 0.5, 1.0, 0, 0.3, 6.8, 2.5, 0, 200, 22, NULL, false, false, false);
+          EOF
+
       - name: Run tests
+        env:
+          DB_URI: postgresql://postgres:postgres@localhost:5432/taxi
         run: pytest -q
