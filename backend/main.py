@@ -489,3 +489,38 @@ def too_good_to_be_true(db: Session = Depends(get_db)):
         }
         for r in rows
     ]
+
+
+@app.get("/api/schema")
+def schema():
+    cols = []
+    for col in YellowCab.__table__.columns:
+        cols.append({"name": col.name, "type": str(col.type)})
+    return cols
+
+
+@app.get("/api/row-sample")
+def row_sample(n: int = 5, db: Session = Depends(get_db)):
+    rows = db.query(YellowCab).order_by(func.random()).limit(n).all()
+
+    return [
+        {col.name: getattr(row, col.name) for col in YellowCab.__table__.columns}
+        for row in rows
+    ]
+
+
+@app.get("/api/health")
+def health(db: Session = Depends(get_db)):
+    try:
+        count = db.query(func.count(YellowCab.id)).scalar()
+        return {
+            "status": "ok",
+            "db": "connected",
+            "rows": count,
+        }
+    except Exception:
+        return {
+            "status": "error",
+            "db": "unreachable",
+            "rows": None,
+        }

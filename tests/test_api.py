@@ -146,3 +146,29 @@ def test_too_good_to_be_true():
     r = client.get("/api/too-good-to-be-true")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
+
+
+def test_schema():
+    r = client.get("/api/schema")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+    if data:
+        assert "name" in data[0]
+        assert "type" in data[0]
+
+
+def test_row_sample():
+    r = client.get("/api/row-sample?n=3")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+    assert len(data) <= 3
+
+
+def test_health():
+    r = client.get("/api/health")
+    assert r.status_code == 200
+    data = r.json()
+    assert "status" in data
+    assert "db" in data
