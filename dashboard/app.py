@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine
@@ -61,9 +62,7 @@ if "fare_amount" in df.columns:
     col3.metric("Avg fare ($)", f"{df['fare_amount'].mean():.2f}")
 
 # Filter anomalies if flags exist
-anomaly_cols = [
-    c for c in df.columns if c.startswith("is_") and df[c].dtype == bool
-]
+anomaly_cols = [c for c in df.columns if c.startswith("is_") and df[c].dtype == bool]
 
 if show_anomalies_only and anomaly_cols:
     mask = False
@@ -76,9 +75,7 @@ else:
 # Time-based analysis
 if "tpep_pickup_datetime" in df_view.columns:
     st.subheader("Trips by pickup hour")
-    df_view["pickup_hour"] = pd.to_datetime(
-        df_view["tpep_pickup_datetime"]
-    ).dt.hour
+    df_view["pickup_hour"] = pd.to_datetime(df_view["tpep_pickup_datetime"]).dt.hour
     hourly_counts = df_view.groupby("pickup_hour").size().reset_index(name="count")
     st.bar_chart(hourly_counts.set_index("pickup_hour"))
 
@@ -101,14 +98,10 @@ if "fare_amount" in df_view.columns:
     st.altair_chart(chart, width="stretch")
 
 
-
 # Anomaly breakdown
 if anomaly_cols:
     st.subheader("Anomaly flags")
-    counts = {
-        col: int(df_view[col].sum())
-        for col in anomaly_cols
-    }
+    counts = {col: int(df_view[col].sum()) for col in anomaly_cols}
     st.write(counts)
 
 # Raw data preview
