@@ -105,6 +105,8 @@ Returns basic statistics from the `yellowcab_cleaned` table.
 The frontend is a React application styled with Tailwind.  
 It displays summary metrics and can be extended with charts and maps.
 
+**Note:** The frontend uses **React 18** because **Recharts is not yet compatible with React 19**.
+
 Start the frontend:
 
 ```bash
