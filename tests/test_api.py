@@ -114,3 +114,17 @@ def test_fare_buckets():
     r = client.get("/api/fare-buckets")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
+
+
+def test_location_pairs():
+    r = client.get("/api/location-pairs?limit=5")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+
+
+def test_airport_traffic():
+    r = client.get("/api/airport-traffic")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, dict)

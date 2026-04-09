@@ -345,3 +345,65 @@ def cluster_hints(db: Session = Depends(get_db)):
         }
         for hour, dist, fare, dur in rows
     ]
+
+
+@app.get("/api/location-pairs")
+def location_pairs(limit: int = 10, db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            YellowCab.PULocationID,
+            YellowCab.DOLocationID,
+            func.count().label("count"),
+        )
+        .group_by(YellowCab.PULocationID, YellowCab.DOLocationID)
+        .order_by(func.count().desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "pickup": pu,
+            "dropoff": do,
+            "count": count,
+        }
+        for pu, do, count in rows
+    ]
+
+
+@app.get("/api/airport-traffic")
+def airport_traffic(db: Session = Depends(get_db)):
+    airport_ids = {
+        "JFK": 132,
+        "LGA": 138,
+        "EWR": 1,
+    }
+
+    results = {}
+
+    for name, loc_id in airport_ids.items():
+        count_pu = (
+            db.query(func.count()).filter(YellowCab.PULocationID == loc_id).scalar()
+        )
+
+        count_do = (
+            db.query(func.count()).filter(YellowCab.DOLocationID == loc_id).scalar()
+        )
+
+        hourly = (
+            db.query(YellowCab.hour, func.count())
+            .filter(
+                (YellowCab.PULocationID == loc_id) | (YellowCab.DOLocationID == loc_id)
+            )
+            .group_by(YellowCab.hour)
+            .order_by(YellowCab.hour)
+            .all()
+        )
+
+        results[name] = {
+            "pickup_count": count_pu,
+            "dropoff_count": count_do,
+            "hourly_distribution": [{"hour": h, "count": c} for h, c in hourly],
+        }
+
+    return results
