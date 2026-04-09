@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -15,15 +16,15 @@ def test_stats_endpoint_structure():
     data = response.json()
     assert "rows" in data
     assert "avg_fare" in data
+    assert isinstance(data["rows"], int)
+    assert isinstance(data["avg_fare"], float)
 
 
 def test_trip_distance_stats():
     r = client.get("/api/trip-distance-stats")
     assert r.status_code == 200
     data = r.json()
-    assert "min" in data
-    assert "avg" in data
-    assert "max" in data
+    assert set(data.keys()) == {"min", "avg", "max"}
 
 
 def test_payment_types():
@@ -49,6 +50,8 @@ def test_top_locations():
     data = r.json()
     assert "top_pickups" in data
     assert "top_dropoffs" in data
+    assert isinstance(data["top_pickups"], list)
+    assert isinstance(data["top_dropoffs"], list)
 
 
 def test_tip_stats():
@@ -64,16 +67,19 @@ def test_duration_stats():
     r = client.get("/api/duration-stats")
     assert r.status_code == 200
     data = r.json()
-    assert "min" in data
-    assert "avg" in data
-    assert "max" in data
+    assert {
+        "min",
+        "avg",
+        "max",
+        "duration_by_hour",
+        "duration_by_distance_bucket",
+    } <= data.keys()
 
 
 def test_heatmap_data():
     r = client.get("/api/heatmap-data")
     assert r.status_code == 200
-    data = r.json()
-    assert isinstance(data, list)
+    assert isinstance(r.json(), list)
 
 
 def test_fraud_signals():
@@ -85,14 +91,14 @@ def test_fraud_signals():
 
 
 def test_outlier_fares():
-    r = client.get("/api/outlier-fares?limit=5")
+    r = client.get("/api/outlier-fares?limit=5&offset=0")
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, list)
 
 
 def test_duplicate_trips():
-    r = client.get("/api/duplicate-trips")
+    r = client.get("/api/duplicate-trips?limit=50&offset=0")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
 
@@ -100,8 +106,7 @@ def test_duplicate_trips():
 def test_cluster_hints():
     r = client.get("/api/cluster-hints")
     assert r.status_code == 200
-    data = r.json()
-    assert isinstance(data, list)
+    assert isinstance(r.json(), list)
 
 
 def test_distance_buckets():
@@ -119,8 +124,7 @@ def test_fare_buckets():
 def test_location_pairs():
     r = client.get("/api/location-pairs?limit=5")
     assert r.status_code == 200
-    data = r.json()
-    assert isinstance(data, list)
+    assert isinstance(r.json(), list)
 
 
 def test_airport_traffic():
@@ -128,6 +132,7 @@ def test_airport_traffic():
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, dict)
+    assert set(data.keys()) == {"JFK", "LGA", "EWR"}
 
 
 def test_rush_hour_squeeze():
