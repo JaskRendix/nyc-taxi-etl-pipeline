@@ -41,3 +41,36 @@ def test_hourly_distribution():
     if data:
         assert "hour" in data[0]
         assert "count" in data[0]
+
+
+def test_top_locations():
+    r = client.get("/api/top-locations?limit=5")
+    assert r.status_code == 200
+    data = r.json()
+    assert "top_pickups" in data
+    assert "top_dropoffs" in data
+
+
+def test_tip_stats():
+    r = client.get("/api/tip-stats")
+    assert r.status_code == 200
+    data = r.json()
+    assert "avg_tip" in data
+    assert "avg_tip_pct" in data
+    assert "avg_tip_by_hour" in data
+
+
+def test_duration_stats():
+    r = client.get("/api/duration-stats")
+    assert r.status_code == 200
+    data = r.json()
+    assert "min" in data
+    assert "avg" in data
+    assert "max" in data
+
+
+def test_heatmap_data():
+    r = client.get("/api/heatmap-data")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
