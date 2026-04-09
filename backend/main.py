@@ -1,8 +1,8 @@
 from fastapi import Depends, FastAPI
 from sqlalchemy.orm import Session
 
-from db import SessionLocal
-from models import YellowCab
+from backend.db import SessionLocal
+from backend.models import YellowCab
 
 app = FastAPI()
 

@@ -9,17 +9,6 @@ from pipeline.transform import transform
 from pipeline.validate import validate
 
 
-@pytest.fixture
-def config():
-    return {
-        "anomaly_thresholds": {
-            "short_expensive": {"duration": 5, "fare": 50},
-            "long_duration": 180,
-            "cheap_per_mile": 0.5,
-        }
-    }
-
-
 def test_extract_csv(tmp_path):
     csv = tmp_path / "test.csv"
     csv.write_text(
