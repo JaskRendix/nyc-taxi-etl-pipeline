@@ -22,7 +22,7 @@ pipeline: ## Run the Python ETL process
 	$(PYTHON) $(PIPELINE)
 
 dev-api: ## Start the FastAPI backend
-	cd $(BACKEND_DIR) && uvicorn main:app --reload --port 3001
+	uvicorn backend.main:app --reload --port 3001
 
 dev-ui: ## Start the React / Vite frontend
 	cd $(FRONTEND_DIR) && npm run dev
