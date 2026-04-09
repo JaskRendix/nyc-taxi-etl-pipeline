@@ -271,3 +271,77 @@ def duplicate_trips(db: Session = Depends(get_db)):
         }
         for pu, do, pu_loc, do_loc, pax, count in rows
     ]
+
+
+@app.get("/api/fare-buckets")
+def fare_buckets(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            func.width_bucket(YellowCab.fare_amount, 0, 40, 3).label("bucket"),
+            func.count(),
+        )
+        .group_by("bucket")
+        .order_by("bucket")
+        .all()
+    )
+
+    # Map bucket numbers to human-readable ranges
+    bucket_labels = {
+        1: "0-10",
+        2: "10-20",
+        3: "20-40",
+        4: "40+",
+    }
+
+    return [
+        {"bucket": bucket_labels.get(b, "unknown"), "count": count} for b, count in rows
+    ]
+
+
+@app.get("/api/distance-buckets")
+def distance_buckets(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            func.width_bucket(YellowCab.trip_distance, 0, 7, 3).label("bucket"),
+            func.count(),
+        )
+        .group_by("bucket")
+        .order_by("bucket")
+        .all()
+    )
+
+    bucket_labels = {
+        1: "0-1",
+        2: "1-3",
+        3: "3-7",
+        4: "7+",
+    }
+
+    return [
+        {"bucket": bucket_labels.get(b, "unknown"), "count": count} for b, count in rows
+    ]
+
+
+@app.get("/api/cluster-hints")
+def cluster_hints(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            YellowCab.hour,
+            func.avg(YellowCab.trip_distance),
+            func.avg(YellowCab.fare_amount),
+            func.avg(YellowCab.trip_duration),
+        )
+        .group_by(YellowCab.hour)
+        .order_by(YellowCab.hour)
+        .all()
+    )
+
+    return [
+        {
+            "hour": hour,
+            "avg_distance": float(dist),
+            "avg_fare": float(fare),
+            "avg_duration": float(dur),
+        }
+        for hour, dist, fare, dur in rows
+    ]

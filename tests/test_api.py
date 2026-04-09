@@ -95,3 +95,22 @@ def test_duplicate_trips():
     r = client.get("/api/duplicate-trips")
     assert r.status_code == 200
     assert isinstance(r.json(), list)
+
+
+def test_cluster_hints():
+    r = client.get("/api/cluster-hints")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+
+
+def test_distance_buckets():
+    r = client.get("/api/distance-buckets")
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
+
+
+def test_fare_buckets():
+    r = client.get("/api/fare-buckets")
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
