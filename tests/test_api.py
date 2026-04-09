@@ -74,3 +74,24 @@ def test_heatmap_data():
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, list)
+
+
+def test_fraud_signals():
+    r = client.get("/api/fraud-signals")
+    assert r.status_code == 200
+    data = r.json()
+    assert "short_expensive" in data
+    assert "cash_only" in data
+
+
+def test_outlier_fares():
+    r = client.get("/api/outlier-fares?limit=5")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+
+
+def test_duplicate_trips():
+    r = client.get("/api/duplicate-trips")
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)

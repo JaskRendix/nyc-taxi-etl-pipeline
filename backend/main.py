@@ -169,3 +169,105 @@ def heatmap_data(db: Session = Depends(get_db)):
         }
         for hour, pu, do, count in rows
     ]
+
+
+@app.get("/api/fraud-signals")
+def fraud_signals(db: Session = Depends(get_db)):
+    short_expensive = (
+        db.query(func.count()).filter(YellowCab.is_short_expensive == True).scalar()
+    )
+
+    long_duration_short_distance = (
+        db.query(func.count())
+        .filter(YellowCab.trip_duration > 1800)  # > 30 minutes
+        .filter(YellowCab.trip_distance < 1)
+        .scalar()
+    )
+
+    cash_only = (
+        db.query(func.count()).filter(YellowCab.payment_type == 2).scalar()  # 2 = cash
+    )
+
+    zero_distance_nonzero_fare = (
+        db.query(func.count())
+        .filter(YellowCab.trip_distance == 0)
+        .filter(YellowCab.fare_amount > 0)
+        .scalar()
+    )
+
+    identical_timestamps = (
+        db.query(func.count())
+        .filter(YellowCab.tpep_pickup_datetime == YellowCab.tpep_dropoff_datetime)
+        .scalar()
+    )
+
+    return {
+        "short_expensive": short_expensive,
+        "long_duration_short_distance": long_duration_short_distance,
+        "cash_only": cash_only,
+        "zero_distance_nonzero_fare": zero_distance_nonzero_fare,
+        "identical_timestamps": identical_timestamps,
+    }
+
+
+@app.get("/api/outlier-fares")
+def outlier_fares(limit: int = 10, db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            YellowCab.id,
+            YellowCab.fare_amount,
+            YellowCab.trip_distance,
+            (YellowCab.fare_amount / func.nullif(YellowCab.trip_distance, 0)).label(
+                "fare_per_mile"
+            ),
+        )
+        .filter(YellowCab.trip_distance > 0)
+        .order_by((YellowCab.fare_amount / YellowCab.trip_distance).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "id": r.id,
+            "fare": float(r.fare_amount),
+            "distance": float(r.trip_distance),
+            "fare_per_mile": float(r.fare_per_mile),
+        }
+        for r in rows
+    ]
+
+
+@app.get("/api/duplicate-trips")
+def duplicate_trips(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            YellowCab.tpep_pickup_datetime,
+            YellowCab.tpep_dropoff_datetime,
+            YellowCab.PULocationID,
+            YellowCab.DOLocationID,
+            YellowCab.passenger_count,
+            func.count().label("count"),
+        )
+        .group_by(
+            YellowCab.tpep_pickup_datetime,
+            YellowCab.tpep_dropoff_datetime,
+            YellowCab.PULocationID,
+            YellowCab.DOLocationID,
+            YellowCab.passenger_count,
+        )
+        .having(func.count() > 1)
+        .all()
+    )
+
+    return [
+        {
+            "pickup": str(pu),
+            "dropoff": str(do),
+            "pulocation": pu_loc,
+            "dolocation": do_loc,
+            "passengers": pax,
+            "count": count,
+        }
+        for pu, do, pu_loc, do_loc, pax, count in rows
+    ]
