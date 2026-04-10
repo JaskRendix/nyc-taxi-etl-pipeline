@@ -74,6 +74,87 @@ The pipeline performs four steps:
 
 ---
 
+## ETL Architecture & Pipeline Design
+
+The NYC Taxi ETL pipeline follows a clean, deterministic multi‑stage flow.  
+Each stage is implemented as a separate module to keep the system testable and maintainable.
+
+### ETL Pipeline Overview
+
+```mermaid
+flowchart LR
+    A[Extract<br/>CSV / Parquet] --> B[Transform<br/>Cleaning & Normalization]
+    B --> C[Validate<br/>Schema + Logic Rules]
+    C --> D[Load<br/>CSV + PostgreSQL]
+```
+
+### Python Orchestration (`main()`)
+
+The pipeline is orchestrated by a simple, readable controller:
+
+```python
+def main():
+    setup_logging()
+    config = load_config("config.yaml")
+
+    df = extract(config["input_path"])
+    df = transform(df, config)
+    validate(df, config)
+    load(df, config["output_path"], config.get("database"))
+```
+
+Each step is isolated:
+
+- **extract()** → reads raw CSV/Parquet into a DataFrame  
+- **transform()** → applies cleaning rules from `config.yaml`  
+- **validate()** → enforces schema, ranges, and logical constraints  
+- **load()** → writes cleaned data to:
+  - `output/cleaned_output.csv`
+  - PostgreSQL (`yellowcab_cleaned` table)
+
+### Module Responsibilities
+
+| Module | Responsibility |
+|--------|----------------|
+| `pipeline.extract` | Reads raw taxi data from disk |
+| `pipeline.transform` | Cleans, normalizes, and enriches the dataset |
+| `pipeline.validate` | Ensures schema correctness and logical consistency |
+| `pipeline.load` | Writes cleaned data to CSV and PostgreSQL |
+| `pipeline.config` | Loads YAML configuration |
+| `pipeline.logging_config` | Centralized logging setup |
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Main as main()
+    participant CFG as load_config
+    participant EXT as extract
+    participant TR as transform
+    participant VAL as validate
+    participant LD as load
+
+    Main->>CFG: Load config.yaml
+    Main->>EXT: Extract raw data
+    EXT-->>Main: DataFrame
+    Main->>TR: Transform data
+    TR-->>Main: Cleaned DataFrame
+    Main->>VAL: Validate data
+    VAL-->>Main: OK or raise error
+    Main->>LD: Load to CSV + PostgreSQL
+    LD-->>Main: Done
+```
+
+### Design Principles
+
+- **Deterministic** — same input → same output  
+- **Config‑driven** — transformation rules live in `config.yaml`  
+- **Composable** — each stage is a pure function  
+- **Testable** — every module has isolated unit tests  
+- **Extensible** — new data sources or sinks can be added without touching the pipeline core  
+
+---
+
 # **Backend API (FastAPI)**
 
 The backend is a lightweight FastAPI service using SQLAlchemy to query PostgreSQL.
