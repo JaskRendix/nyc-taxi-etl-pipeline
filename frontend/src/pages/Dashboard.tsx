@@ -20,6 +20,12 @@ export default function TaxiDashboard() {
   const fraud = useApi<Record<string, number>>("/api/fraud-signals");
   const hourly = useApi<{ hour: number; count: number }[]>("/api/hourly-distribution");
   const payments = useApi<Record<string, number>>("/api/payment-types");
+  const revenueVelocity = useApi<{ hour: number; avg_earnings_per_hour: number; avg_earnings_per_mile: number }[]>("/api/revenue-velocity");
+  const tolls = useApi<{
+    tolls: { total: number; average: number };
+    improvement_surcharge: { total: number; average: number };
+    congestion_surcharge: { total: number; average: number };
+  }>("/api/tolls-and-surcharges");
 
   const paymentData = payments.data
     ? Object.entries(payments.data).map(([type, count]) => ({
@@ -82,6 +88,25 @@ export default function TaxiDashboard() {
         />
       </div>
 
+      {/* Financial Summary Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <DashboardCard
+          title="Total Tolls"
+          value={tolls.data ? tolls.data.tolls.total.toFixed(2) : null}
+          unit="USD"
+        />
+        <DashboardCard
+          title="Avg. Congestion Surcharge"
+          value={tolls.data ? tolls.data.congestion_surcharge.average.toFixed(2) : null}
+          unit="USD"
+        />
+        <DashboardCard
+          title="Total Improvement Surcharge"
+          value={tolls.data ? tolls.data.improvement_surcharge.total.toFixed(2) : null}
+          unit="USD"
+        />
+      </div>
+
       {/* Hourly Trips Chart */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8 w-full">
         <h2 className="text-lg font-semibold text-slate-800 mb-4">
@@ -99,6 +124,33 @@ export default function TaxiDashboard() {
                   type="monotone"
                   dataKey="count"
                   stroke="#2563eb"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-slate-400 text-center pt-20">Loading…</div>
+          )}
+        </div>
+      </div>
+
+      {/* Revenue Velocity Chart */}
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8 w-full">
+        <h2 className="text-lg font-semibold text-slate-800 mb-4">
+          Revenue Velocity (Earnings per Hour)
+        </h2>
+
+        <div style={{ height: 260, width: "100%" }}>
+          {Array.isArray(revenueVelocity.data) && revenueVelocity.data.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={revenueVelocity.data}>
+                <XAxis dataKey="hour" />
+                <YAxis />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="avg_earnings_per_hour"
+                  stroke="#16a34a"
                   strokeWidth={2}
                 />
               </LineChart>

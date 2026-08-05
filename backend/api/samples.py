@@ -1,19 +1,23 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from backend.api.schemas import DuplicateTripItem, OutlierFareItem, SchemaColumnItem
 from backend.core.db import get_db
 from backend.models import YellowCab
 
 router = APIRouter()
 
 
-@router.get("/outlier-fares")
+@router.get("/outlier-fares", response_model=list[OutlierFareItem])
 def outlier_fares(
-    limit: int = Query(10, le=200),
-    offset: int = 0,
+    limit: int = Query(default=10, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-):
+) -> list[OutlierFareItem]:
+    """Retrieve trips with the highest fare-per-mile ratios."""
     rows = (
         db.query(
             YellowCab.id,
@@ -41,12 +45,13 @@ def outlier_fares(
     ]
 
 
-@router.get("/duplicate-trips")
+@router.get("/duplicate-trips", response_model=list[DuplicateTripItem])
 def duplicate_trips(
-    limit: int = Query(100, le=500),
-    offset: int = 0,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-):
+) -> list[DuplicateTripItem]:
+    """Retrieve groups of identical trips appearing multiple times in the dataset."""
     rows = (
         db.query(
             YellowCab.tpep_pickup_datetime,
@@ -82,15 +87,20 @@ def duplicate_trips(
     ]
 
 
-@router.get("/schema")
-def schema():
+@router.get("/schema", response_model=list[SchemaColumnItem])
+def schema() -> list[SchemaColumnItem]:
+    """Retrieve column names and data types for the YellowCab schema."""
     return [
         {"name": col.name, "type": str(col.type)} for col in YellowCab.__table__.columns
     ]
 
 
-@router.get("/row-sample")
-def row_sample(n: int = 5, db: Session = Depends(get_db)):
+@router.get("/row-sample", response_model=list[dict[str, Any]])
+def row_sample(
+    n: int = Query(default=5, ge=1, le=50),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Retrieve a random sample of rows from the dataset."""
     rows = db.query(YellowCab).order_by(func.random()).limit(n).all()
     return [
         {col.name: getattr(row, col.name) for col in YellowCab.__table__.columns}

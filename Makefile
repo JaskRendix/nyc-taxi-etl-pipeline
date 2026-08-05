@@ -6,7 +6,7 @@ PIPELINE = run_pipeline.py
 
 # --- Commands ---
 
-.PHONY: help setup db-up pipeline dev-ui dev-api dev clean
+.PHONY: help setup db-up pipeline train dev-ui dev-api dev clean
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -20,6 +20,9 @@ db-up: ## Start the Postgres Docker container
 
 pipeline: ## Run the Python ETL process
 	$(PYTHON) $(PIPELINE)
+
+train: ## Train the fare prediction model
+	$(PYTHON) pipeline/train_model.py
 
 dev-api: ## Start the FastAPI backend
 	uvicorn backend.main:app --reload --port 3001

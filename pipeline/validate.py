@@ -1,18 +1,22 @@
 import logging
+from collections.abc import Mapping
+from typing import Any
 
 import pandas as pd
 
 
-def validate(df: pd.DataFrame, config: dict) -> None:
-    """
-    Validate the cleaned DataFrame using rules from config.
-    Raises ValueError if validation fails.
-    """
+def validate(df: pd.DataFrame, config: Mapping[str, Any]) -> None:
+    """Validate the cleaned DataFrame using rules from config.
 
-    thresholds = config["anomaly_thresholds"]
+    Raises:
+        ValueError: If required columns are missing, data contains invalid
+            values (non-positive durations/fares), or config thresholds are
+            invalid.
+    """
+    thresholds: dict[str, Any] = config["anomaly_thresholds"]
 
     # Basic schema checks
-    required_columns = [
+    required_columns: list[str] = [
         "tpep_pickup_datetime",
         "tpep_dropoff_datetime",
         "trip_distance",

@@ -1,36 +1,30 @@
-# **NYC Taxi ETL Pipeline**
+# NYC Taxi ETL Pipeline
 
-This project processes NYC Yellow Taxi trip data and exposes the cleaned results through a small full‑stack system.  
-It includes a Python ETL pipeline, a PostgreSQL database, a FastAPI backend, and a React dashboard.
+This project processes NYC Yellow Taxi trip data. System components include a Python ETL pipeline, a PostgreSQL database, a FastAPI backend, a React dashboard, and a scikit-learn regression model.
 
-The goal is to show a clear end‑to‑end flow:  
-**raw data → cleaned data → database → API → UI**
+Data flow: raw data $\rightarrow$ database $\rightarrow$ API $\rightarrow$ UI.
 
 ---
 
-# **Project Structure**
+# Project Structure
 
 ```
 nyc-taxi-etl-pipeline/
-├── pipeline/               # Python ETL logic
-├── data/                   # Raw input files
-├── output/                 # Cleaned output files
-├── docker-compose.yml      # PostgreSQL service
-│
-├── backend/                # FastAPI backend (Python + SQLAlchemy)
-│   ├── main.py
-│   ├── models.py
-│   └── db.py
-│
-├── frontend/               # React + Vite + Tailwind dashboard
-│   └── src/components/Dashboard.tsx
-│
-└── Makefile                # Unified commands
+├── pipeline/               # ETL and ML scripts
+├── backend/                # FastAPI backend
+│   └── core/               # Model binaries and metrics
+├── frontend/               # React dashboard
+├── tests/                  # Test suite
+├── data/                   # Input files
+├── output/                 # Output files
+├── config.yaml             # Pipeline configuration
+├── docker-compose.yml      # PostgreSQL container definition
+└── Makefile                # Task runner
 ```
 
 ---
 
-# **Setup**
+# Setup
 
 ## 1. Create and activate a virtual environment
 
@@ -39,13 +33,11 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-## 2. Install all dependencies
+## 2. Install dependencies
 
 ```bash
 make setup
 ```
-
-This installs Python packages and frontend dependencies.
 
 ## 3. Start PostgreSQL
 
@@ -53,166 +45,87 @@ This installs Python packages and frontend dependencies.
 make db-up
 ```
 
-This starts a PostgreSQL 15 container with a `taxi` database.
-
 ---
 
-# **Run the ETL Pipeline**
+# Run the ETL Pipeline
 
 ```bash
 make pipeline
 ```
 
-The pipeline performs four steps:
+```mermaid
+flowchart LR
+    A[Extract] --> B[Transform]
+    B --> C[Validate]
+    C --> D[Load]
+```
 
-1. Extract data from CSV or Parquet  
-2. Transform it using rules defined in `config.yaml`  
-3. Validate schema and logical constraints  
-4. Load cleaned data into:
-   - `output/cleaned_output.csv`
-   - the `yellowcab_cleaned` table in PostgreSQL
+Pipeline steps:
+
+1. Extract data from disk.
+2. Transform data using rules from `config.yaml`.
+3. Validate schema and logical constraints.
+4. Load data into `output/cleaned_output.csv` and the PostgreSQL table `yellowcab_cleaned`.
 
 ---
 
-## ETL Architecture & Pipeline Design
+# Train the ML Model
 
-The NYC Taxi ETL pipeline follows a clean, deterministic multi‑stage flow.  
-Each stage is implemented as a separate module to keep the system testable and maintainable.
-
-### ETL Pipeline Overview
+```bash
+make train
+```
 
 ```mermaid
 flowchart LR
-    A[Extract<br/>CSV / Parquet] --> B[Transform<br/>Cleaning & Normalization]
-    B --> C[Validate<br/>Schema + Logic Rules]
-    C --> D[Load<br/>CSV + PostgreSQL]
+    A[Load from DB] --> B[Extract Features]
+    B --> C[Train Linear Regression]
+    C --> D[Save Artifacts]
 ```
 
-### Python Orchestration (`main()`)
+This script:
 
-The pipeline is orchestrated by a simple, readable controller:
-
-```python
-def main():
-    setup_logging()
-    config = load_config("config.yaml")
-
-    df = extract(config["input_path"])
-    df = transform(df, config)
-    validate(df, config)
-    load(df, config["output_path"], config.get("database"))
-```
-
-Each step is isolated:
-
-- **extract()** → reads raw CSV/Parquet into a DataFrame  
-- **transform()** → applies cleaning rules from `config.yaml`  
-- **validate()** → enforces schema, ranges, and logical constraints  
-- **load()** → writes cleaned data to:
-  - `output/cleaned_output.csv`
-  - PostgreSQL (`yellowcab_cleaned` table)
-
-### Module Responsibilities
-
-| Module | Responsibility |
-|--------|----------------|
-| `pipeline.extract` | Reads raw taxi data from disk |
-| `pipeline.transform` | Cleans, normalizes, and enriches the dataset |
-| `pipeline.validate` | Ensures schema correctness and logical consistency |
-| `pipeline.load` | Writes cleaned data to CSV and PostgreSQL |
-| `pipeline.config` | Loads YAML configuration |
-| `pipeline.logging_config` | Centralized logging setup |
-
-### Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant Main as main()
-    participant CFG as load_config
-    participant EXT as extract
-    participant TR as transform
-    participant VAL as validate
-    participant LD as load
-
-    Main->>CFG: Load config.yaml
-    Main->>EXT: Extract raw data
-    EXT-->>Main: DataFrame
-    Main->>TR: Transform data
-    TR-->>Main: Cleaned DataFrame
-    Main->>VAL: Validate data
-    VAL-->>Main: OK or raise error
-    Main->>LD: Load to CSV + PostgreSQL
-    LD-->>Main: Done
-```
-
-### Design Principles
-
-- **Deterministic** — same input → same output  
-- **Config‑driven** — transformation rules live in `config.yaml`  
-- **Composable** — each stage is a pure function  
-- **Testable** — every module has isolated unit tests  
-- **Extensible** — new data sources or sinks can be added without touching the pipeline core  
+1. Connects to PostgreSQL to read the cleaned dataset.
+2. Extracts feature columns.
+3. Trains a Linear Regression model.
+4. Computes evaluation metrics (MAE, RMSE, R²).
+5. Saves model binaries to `backend/core/fare_model.pkl` and metrics to `backend/core/metrics.json`.
 
 ---
 
-# **Backend API (FastAPI)**
-
-The backend is a lightweight FastAPI service using SQLAlchemy to query PostgreSQL.
-
-Start the backend:
+# Backend API (FastAPI)
 
 ```bash
 make dev-api
 ```
 
-The server runs on:
+The server runs on `http://localhost:3001`.
 
-```
-http://localhost:3001
-```
+Key endpoints:
 
-Example endpoint:
-
-```
-GET /api/stats
-```
-
-Returns basic statistics from the `yellowcab_cleaned` table.
+* `GET /api/stats` — Returns table statistics.
+* `POST /api/predict` — Loads the trained model and returns a predicted fare amount.
 
 ---
 
-# **Frontend Dashboard**
-
-The frontend is a React application styled with Tailwind.  
-It displays summary metrics and can be extended with charts and maps.
-
-**Note:** The frontend uses **React 18** because **Recharts is not yet compatible with React 19**.
-
-Start the frontend:
+# Frontend Dashboard
 
 ```bash
 make dev-ui
 ```
 
-The dashboard runs on:
-
-```
-http://localhost:5173
-```
+The dashboard runs on `http://localhost:5173`. Uses React 18.
 
 ---
 
-# **Run Backend and Frontend Together**
+# Run Backend and Frontend Together
 
 ```bash
 make dev
 ```
 
-This starts both services in parallel.
-
 ---
 
-# **Verify Data in PostgreSQL**
+# Verify Data in PostgreSQL
 
 ```bash
 docker exec -it taxi_postgres psql -U postgres -d taxi
@@ -221,10 +134,8 @@ SELECT COUNT(*) FROM yellowcab_cleaned;
 
 ---
 
-# **Clean Up**
+# Clean Up
 
 ```bash
 make clean
 ```
-
-Stops Docker and removes build artifacts.

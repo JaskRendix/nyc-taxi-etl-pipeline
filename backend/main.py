@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api import buckets, fraud, health, locations, samples, stats
+from backend.api import buckets, financial, fraud, health, locations, samples, stats
 
 app = FastAPI()
 
@@ -19,3 +19,4 @@ app.include_router(fraud.router, prefix="/api")
 app.include_router(locations.router, prefix="/api")
 app.include_router(samples.router, prefix="/api")
 app.include_router(health.router, prefix="/api")
+app.include_router(financial.router, prefix="/api")

@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 on:
   push:
@@ -31,6 +31,11 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
       - name: Install dependencies
         run: |
@@ -71,6 +76,11 @@ jobs:
             airport_fee FLOAT,
             trip_duration FLOAT,
             hour INT,
+            distance_bucket INT,
+            duration_bucket INT,
+            speed_mpm FLOAT,
+            is_peak_hour INT,
+            is_airport INT,
             reason TEXT,
             is_short_expensive BOOLEAN,
             is_long_duration BOOLEAN,
@@ -83,12 +93,18 @@ jobs:
             "PULocationID", "DOLocationID", payment_type, fare_amount,
             extra, mta_tax, tip_amount, tolls_amount, improvement_surcharge,
             total_amount, congestion_surcharge, airport_fee, trip_duration,
-            hour, reason, is_short_expensive, is_long_duration, is_cheap_per_mile
+            hour, distance_bucket, duration_bucket, speed_mpm, is_peak_hour, is_airport,
+            reason, is_short_expensive, is_long_duration, is_cheap_per_mile
           ) VALUES
-            (1, NOW(), NOW(), 1, 1.2, 1, 'N', 10, 20, 1, 8.5, 0, 0.5, 2.0, 0, 0.3, 10.8, 2.5, 0, 300, 14, NULL, false, false, false),
-            (2, NOW(), NOW(), 2, 3.4, 1, 'N', 11, 21, 2, 12.0, 0, 0.5, 3.0, 0, 0.3, 15.8, 2.5, 0, 600, 9, NULL, false, false, false),
-            (1, NOW(), NOW(), 1, 0.8, 1, 'N', 12, 22, 1, 5.0, 0, 0.5, 1.0, 0, 0.3, 6.8, 2.5, 0, 200, 22, NULL, false, false, false);
+            (1, NOW(), NOW(), 1, 1.2, 1, 'N', 10, 20, 1, 8.5, 0, 0.5, 2.0, 0, 0.3, 10.8, 2.5, 0, 300, 14, 1, 1, 0.25, 1, 0, NULL, false, false, false),
+            (2, NOW(), NOW(), 2, 3.4, 1, 'N', 11, 21, 2, 12.0, 0, 0.5, 3.0, 0, 0.3, 15.8, 2.5, 0, 600, 9, 2, 2, 0.30, 0, 0, NULL, false, false, false),
+            (1, NOW(), NOW(), 1, 0.8, 1, 'N', 12, 22, 1, 5.0, 0, 0.5, 1.0, 0, 0.3, 6.8, 2.5, 0, 200, 22, 1, 1, 0.20, 0, 0, NULL, false, false, false);
           EOF
+
+      - name: Train model for tests
+        env:
+          DB_URI: postgresql://postgres:postgres@localhost:5432/taxi
+        run: python pipeline/train_model.py
 
       - name: Run tests
         env:

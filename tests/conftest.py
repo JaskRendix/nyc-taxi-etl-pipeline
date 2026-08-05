@@ -1,20 +1,18 @@
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from backend.main import app
+from backend.api.stats import router
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+def mock_db():
+    return MagicMock()
 
 
 @pytest.fixture
-def config():
-    return {
-        "anomaly_thresholds": {
-            "short_expensive": {"duration": 5, "fare": 50},
-            "long_duration": 180,
-            "cheap_per_mile": 0.5,
-        }
-    }
+def client(mock_db):
+    with patch("backend.api.stats.get_db", return_value=mock_db):
+        app = FastAPI()
+        app.include_router(router, prefix="/api")
+        return TestClient(app)

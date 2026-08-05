@@ -80,6 +80,8 @@ backend/.tsbuildinfo
 backend/prisma/migrations/
 backend/node_modules/.prisma/
 backend/prisma/client/
+backend/core/fare_model.pkl
+backend/core/metrics.json
 
 # Frontend (React + Vite)
 frontend/node_modules/
